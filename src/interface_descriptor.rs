@@ -56,9 +56,7 @@ impl<'a> Iterator for InterfaceDescriptors<'a> {
     type Item = InterfaceDescriptor<'a>;
 
     fn next(&mut self) -> Option<InterfaceDescriptor<'a>> {
-        self.iter
-            .next()
-            .map(|descriptor| InterfaceDescriptor(descriptor))
+        self.iter.next().map(InterfaceDescriptor)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -121,7 +119,7 @@ impl<'a> InterfaceDescriptor<'a> {
     /// Returns the unknown 'extra' bytes that libusb does not understand.
     pub fn extra(&self) -> &[u8] {
         unsafe {
-            match (*self.0).extra_length {
+            match self.0.extra_length {
                 len if len > 0 => slice::from_raw_parts(self.0.extra, len as usize),
                 _ => &[],
             }

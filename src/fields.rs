@@ -85,7 +85,7 @@ impl From<c_int> for Speed {
             LIBUSB_SPEED_HIGH => High,
             LIBUSB_SPEED_SUPER => Super,
             LIBUSB_SPEED_SUPER_PLUS => SuperPlus,
-            LIBUSB_SPEED_UNKNOWN | _ => Unknown,
+            _ => Unknown,
         }
     }
 }

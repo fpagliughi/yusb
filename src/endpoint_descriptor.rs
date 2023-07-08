@@ -33,7 +33,7 @@ impl<'a> EndpointDescriptor<'a> {
         use Direction::*;
         match self.0.bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK {
             LIBUSB_ENDPOINT_OUT => Out,
-            LIBUSB_ENDPOINT_IN | _ => In,
+            _ => In,
         }
     }
 
@@ -44,7 +44,7 @@ impl<'a> EndpointDescriptor<'a> {
             LIBUSB_TRANSFER_TYPE_CONTROL => Control,
             LIBUSB_TRANSFER_TYPE_ISOCHRONOUS => Isochronous,
             LIBUSB_TRANSFER_TYPE_BULK => Bulk,
-            LIBUSB_TRANSFER_TYPE_INTERRUPT | _ => Interrupt,
+            _ => Interrupt,
         }
     }
 
@@ -57,7 +57,7 @@ impl<'a> EndpointDescriptor<'a> {
             LIBUSB_ISO_SYNC_TYPE_NONE => NoSync,
             LIBUSB_ISO_SYNC_TYPE_ASYNC => Asynchronous,
             LIBUSB_ISO_SYNC_TYPE_ADAPTIVE => Adaptive,
-            LIBUSB_ISO_SYNC_TYPE_SYNC | _ => Synchronous,
+            _ => Synchronous,
         }
     }
 
@@ -87,8 +87,8 @@ impl<'a> EndpointDescriptor<'a> {
     /// Returns the unknown 'extra' bytes that libusb does not understand.
     pub fn extra(&'a self) -> Option<&'a [u8]> {
         unsafe {
-            match (*self.0).extra_length {
-                len if len > 0 => Some(slice::from_raw_parts((*self.0).extra, len as usize)),
+            match self.0.extra_length {
+                len if len > 0 => Some(slice::from_raw_parts(self.0.extra, len as usize)),
                 _ => None,
             }
         }
