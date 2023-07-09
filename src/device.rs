@@ -24,45 +24,8 @@ use std::{
 /// A reference to a USB device.
 #[derive(Eq, PartialEq)]
 pub struct Device {
-    context: Context,
+    ctx: Context,
     device: NonNull<libusb_device>,
-}
-
-impl Drop for Device {
-    /// Releases the device reference.
-    fn drop(&mut self) {
-        unsafe {
-            libusb_unref_device(self.device.as_ptr());
-        }
-    }
-}
-
-impl Clone for Device {
-    fn clone(&self) -> Self {
-        unsafe { Self::from_libusb(self.context.clone(), self.device) }
-    }
-}
-
-unsafe impl Send for Device {}
-unsafe impl Sync for Device {}
-
-impl Debug for Device {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let descriptor = match self.device_descriptor() {
-            Ok(descriptor) => descriptor,
-            Err(e) => {
-                return write!(f, "Can't read device descriptor {:?}", e);
-            }
-        };
-        write!(
-            f,
-            "Bus {:03} Device {:03}: ID {:04x}:{:04x}",
-            self.bus_number(),
-            self.address(),
-            descriptor.vendor_id(),
-            descriptor.product_id(),
-        )
-    }
 }
 
 impl Device {
@@ -72,17 +35,17 @@ impl Device {
     }
 
     /// Get the context associated with this device
-    pub fn context(&self) -> &Context {
-        &self.context
+    pub fn context(&self) -> Context {
+        self.ctx.clone()
     }
 
     /// # Safety
     ///
     /// Converts an existing `libusb_device` pointer into a `Device`.
     /// `device` must be a pointer to a valid `libusb_device`. Rusb increments refcount.
-    pub unsafe fn from_libusb(context: Context, device: NonNull<libusb_device>) -> Self {
+    pub unsafe fn from_libusb(ctx: Context, device: NonNull<libusb_device>) -> Self {
         libusb_ref_device(device.as_ptr());
-        Self { context, device }
+        Self { ctx, device }
     }
 
     /// Reads the device descriptor.
@@ -146,7 +109,7 @@ impl Device {
 
         Ok(unsafe {
             let ptr = NonNull::new(handle.assume_init()).ok_or(Error::NoDevice)?;
-            DeviceHandle::from_libusb(self.context.clone(), ptr)
+            DeviceHandle::from_libusb(self.context(), ptr)
         })
     }
 
@@ -158,8 +121,7 @@ impl Device {
     /// Returns the device's parent
     pub fn get_parent(&self) -> Option<Self> {
         let device = unsafe { libusb_get_parent(self.device.as_ptr()) };
-        NonNull::new(device)
-            .map(|device| unsafe { Device::from_libusb(self.context.clone(), device) })
+        NonNull::new(device).map(|device| unsafe { Device::from_libusb(self.context(), device) })
     }
 
     ///  Get the list of all port numbers from root for the specified device
@@ -196,5 +158,42 @@ impl Device {
             Ok(d) => vid == d.vendor_id() && pid == d.product_id(),
             _ => false,
         }
+    }
+}
+
+impl Drop for Device {
+    /// Releases the device reference.
+    fn drop(&mut self) {
+        unsafe {
+            libusb_unref_device(self.device.as_ptr());
+        }
+    }
+}
+
+impl Clone for Device {
+    fn clone(&self) -> Self {
+        unsafe { Self::from_libusb(self.context(), self.device) }
+    }
+}
+
+unsafe impl Send for Device {}
+unsafe impl Sync for Device {}
+
+impl Debug for Device {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let descriptor = match self.device_descriptor() {
+            Ok(descriptor) => descriptor,
+            Err(e) => {
+                return write!(f, "Can't read device descriptor {:?}", e);
+            }
+        };
+        write!(
+            f,
+            "Bus {:03} Device {:03}: ID {:04x}:{:04x}",
+            self.bus_number(),
+            self.address(),
+            descriptor.vendor_id(),
+            descriptor.product_id(),
+        )
     }
 }
