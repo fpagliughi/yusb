@@ -119,6 +119,21 @@ impl Context {
         DeviceList::new_with_context(self.clone())
     }
 
+    /*
+    /// Returns a list of the current USB devices.
+    pub fn devices_with_vid_pid(&self, vid: u16, pid: u16) -> Result<DeviceList> {
+        DeviceList::new_with_context(self.clone())
+            .map(|it| {
+                it.filter(|dev| {
+                    match dev.device_descriptor() {
+                        Ok(descr) => vid == descr.vendor_id() && pid == descr.product_id(),
+                        _ => false
+                    }
+                })
+            })
+    }
+    */
+
     /// Convenience function to open a device by its vendor ID and product ID.
     ///
     /// This function is provided as a convenience for building prototypes without having to

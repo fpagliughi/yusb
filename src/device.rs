@@ -179,4 +179,22 @@ impl Device {
         let ports = self.port_numbers()?;
         Ok(Port::new(bus, ports))
     }
+
+    /// Determines if the device has the specified VID.
+    /// This can be used as a filter for searching a `DeviceList`
+    pub fn matches_vid(&self, vid: u16) -> bool {
+        match self.device_descriptor() {
+            Ok(d) => vid == d.vendor_id(),
+            _ => false,
+        }
+    }
+
+    /// Determines if the device has the specified VID:PID.
+    /// This can be used as a filter for searching a `DeviceList`
+    pub fn matches_vid_pid(&self, vid: u16, pid: u16) -> bool {
+        match self.device_descriptor() {
+            Ok(d) => vid == d.vendor_id() && pid == d.product_id(),
+            _ => false,
+        }
+    }
 }

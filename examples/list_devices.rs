@@ -21,7 +21,7 @@ fn main() {
 fn list_devices() -> Result<()> {
     let timeout = Duration::from_secs(1);
 
-    for device in DeviceList::new()?.iter() {
+    for device in DeviceList::new()? {
         let device_desc = match device.device_descriptor() {
             Ok(d) => d,
             Err(_) => continue,

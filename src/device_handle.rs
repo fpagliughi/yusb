@@ -11,10 +11,9 @@
 //
 
 use crate::{
-    device::{self, Device},
     fields::{request_type, Direction, Recipient, RequestType},
     language::Language,
-    ConfigDescriptor, Context, DeviceDescriptor, Error, InterfaceDescriptor, Result,
+    ConfigDescriptor, Context, Device, DeviceDescriptor, Error, InterfaceDescriptor, Result,
 };
 use libusb1_sys::{constants::*, *};
 use std::{
@@ -117,37 +116,9 @@ impl<'a> Iterator for ClaimedInterfacesIter<'a> {
 /// A handle to an open USB device.
 #[derive(Eq, PartialEq)]
 pub struct DeviceHandle {
-    context: Context,
+    ctx: Context,
     handle: Option<NonNull<libusb_device_handle>>,
     interfaces: ClaimedInterfaces,
-}
-
-impl Drop for DeviceHandle {
-    /// Closes the device.
-    fn drop(&mut self) {
-        unsafe {
-            for iface in self.interfaces.iter() {
-                libusb_release_interface(self.as_raw(), iface as c_int);
-            }
-
-            if let Some(handle) = self.handle {
-                libusb_close(handle.as_ptr());
-            }
-        }
-    }
-}
-
-unsafe impl Send for DeviceHandle {}
-unsafe impl Sync for DeviceHandle {}
-
-impl Debug for DeviceHandle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("DeviceHandle")
-            .field("device", &self.device())
-            .field("handle", &self.handle)
-            .field("interfaces", &self.interfaces)
-            .finish()
-    }
 }
 
 impl DeviceHandle {
@@ -178,15 +149,15 @@ impl DeviceHandle {
     }
 
     /// Get the context associated with this device
-    pub fn context(&self) -> &Context {
-        &self.context
+    pub fn context(&self) -> Context {
+        self.ctx.clone()
     }
 
     /// Get the device associated to this handle
     pub fn device(&self) -> Device {
         unsafe {
-            device::Device::from_libusb(
-                self.context.clone(),
+            Device::from_libusb(
+                self.context(),
                 std::ptr::NonNull::new_unchecked(libusb_get_device(self.as_raw())),
             )
         }
@@ -196,9 +167,9 @@ impl DeviceHandle {
     ///
     /// Converts an existing `libusb_device_handle` pointer into a `DeviceHandle`.
     /// `handle` must be a pointer to a valid `libusb_device_handle`. yusb assumes ownership of the handle, and will close it on `drop`.
-    pub unsafe fn from_libusb(context: Context, handle: NonNull<libusb_device_handle>) -> Self {
+    pub unsafe fn from_libusb(ctx: Context, handle: NonNull<libusb_device_handle>) -> Self {
         Self {
-            context,
+            ctx,
             handle: Some(handle),
             interfaces: ClaimedInterfaces::new(),
         }
@@ -666,8 +637,7 @@ impl DeviceHandle {
             .collect())
     }
 
-    /// Reads a ascii string descriptor from the device.
-    ///
+    /// Reads an ASCII string descriptor from the device.
     pub fn read_string_descriptor_ascii(&self, index: u8) -> Result<String> {
         let mut buf = Vec::<u8>::with_capacity(255);
 
@@ -821,6 +791,34 @@ impl DeviceHandle {
             None => Err(Error::InvalidParam),
             Some(n) => self.read_string_descriptor(language, n, timeout),
         }
+    }
+}
+
+impl Drop for DeviceHandle {
+    /// Closes the device.
+    fn drop(&mut self) {
+        unsafe {
+            for iface in self.interfaces.iter() {
+                libusb_release_interface(self.as_raw(), iface as c_int);
+            }
+
+            if let Some(handle) = self.handle {
+                libusb_close(handle.as_ptr());
+            }
+        }
+    }
+}
+
+unsafe impl Send for DeviceHandle {}
+unsafe impl Sync for DeviceHandle {}
+
+impl Debug for DeviceHandle {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("DeviceHandle")
+            .field("device", &self.device())
+            .field("handle", &self.handle)
+            .field("interfaces", &self.interfaces)
+            .finish()
     }
 }
 
