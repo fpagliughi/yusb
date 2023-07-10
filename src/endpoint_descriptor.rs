@@ -10,7 +10,7 @@
 // to those terms.
 //
 
-use crate::fields::{Direction, SyncType, TransferType, UsageType};
+use crate::fields::{Direction, IsoSyncType, IsoUsageType, TransferType};
 use libusb1_sys::{constants::*, libusb_endpoint_descriptor};
 use std::{fmt, slice};
 
@@ -30,48 +30,26 @@ impl<'a> EndpointDescriptor<'a> {
 
     /// Returns the endpoint's direction.
     pub fn direction(&self) -> Direction {
-        use Direction::*;
-        match self.0.bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK {
-            LIBUSB_ENDPOINT_OUT => Out,
-            _ => In,
-        }
+        Direction::from(self.0.bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK)
     }
 
     /// Returns the endpoint's transfer type.
     pub fn transfer_type(&self) -> TransferType {
-        use TransferType::*;
-        match self.0.bmAttributes & LIBUSB_TRANSFER_TYPE_MASK {
-            LIBUSB_TRANSFER_TYPE_CONTROL => Control,
-            LIBUSB_TRANSFER_TYPE_ISOCHRONOUS => Isochronous,
-            LIBUSB_TRANSFER_TYPE_BULK => Bulk,
-            _ => Interrupt,
-        }
+        TransferType::from(self.0.bmAttributes & LIBUSB_TRANSFER_TYPE_MASK)
     }
 
-    /// Returns the endpoint's synchronisation mode.
+    /// Returns the isochronous endpoint's synchronisation mode.
     ///
     /// The return value of this method is only valid for isochronous endpoints.
-    pub fn sync_type(&self) -> SyncType {
-        use SyncType::*;
-        match (self.0.bmAttributes & LIBUSB_ISO_SYNC_TYPE_MASK) >> 2 {
-            LIBUSB_ISO_SYNC_TYPE_NONE => NoSync,
-            LIBUSB_ISO_SYNC_TYPE_ASYNC => Asynchronous,
-            LIBUSB_ISO_SYNC_TYPE_ADAPTIVE => Adaptive,
-            _ => Synchronous,
-        }
+    pub fn iso_sync_type(&self) -> IsoSyncType {
+        IsoSyncType::from((self.0.bmAttributes & LIBUSB_ISO_SYNC_TYPE_MASK) >> 2)
     }
 
-    /// Returns the endpoint's usage type.
+    /// Returns the isochronous endpoint's usage type.
     ///
     /// The return value of this method is only valid for isochronous endpoints.
-    pub fn usage_type(&self) -> UsageType {
-        use UsageType::*;
-        match (self.0.bmAttributes & LIBUSB_ISO_USAGE_TYPE_MASK) >> 4 {
-            LIBUSB_ISO_USAGE_TYPE_DATA => Data,
-            LIBUSB_ISO_USAGE_TYPE_FEEDBACK => Feedback,
-            LIBUSB_ISO_USAGE_TYPE_IMPLICIT => FeedbackData,
-            _ => Reserved,
-        }
+    pub fn iso_usage_type(&self) -> IsoUsageType {
+        IsoUsageType::from((self.0.bmAttributes & LIBUSB_ISO_USAGE_TYPE_MASK) >> 4)
     }
 
     /// Returns the endpoint's maximum packet size.
@@ -131,7 +109,7 @@ mod test {
     #![allow(unused_qualifications)]
 
     use super::*;
-    use crate::fields::{Direction, SyncType, TransferType, UsageType};
+    use crate::fields::{Direction, IsoSyncType, IsoUsageType, TransferType};
 
     #[test]
     fn it_interprets_number_for_output_endpoints() {
@@ -222,40 +200,48 @@ mod test {
     #[test]
     fn it_interprets_synchronization_type_in_attributes() {
         assert_eq!(
-            SyncType::NoSync,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0001)).sync_type()
+            IsoSyncType::NoSync,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0001))
+                .iso_sync_type()
         );
         assert_eq!(
-            SyncType::Asynchronous,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0101)).sync_type()
+            IsoSyncType::Asynchronous,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0101))
+                .iso_sync_type()
         );
         assert_eq!(
-            SyncType::Adaptive,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_1001)).sync_type()
+            IsoSyncType::Adaptive,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_1001))
+                .iso_sync_type()
         );
         assert_eq!(
-            SyncType::Synchronous,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_1101)).sync_type()
+            IsoSyncType::Synchronous,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_1101))
+                .iso_sync_type()
         );
     }
 
     #[test]
     fn it_interprets_usage_type_in_attributes() {
         assert_eq!(
-            UsageType::Data,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0001)).usage_type()
+            IsoUsageType::Data,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0000_0001))
+                .iso_usage_type()
         );
         assert_eq!(
-            UsageType::Feedback,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0001_0001)).usage_type()
+            IsoUsageType::Feedback,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0001_0001))
+                .iso_usage_type()
         );
         assert_eq!(
-            UsageType::FeedbackData,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0010_0001)).usage_type()
+            IsoUsageType::FeedbackData,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0010_0001))
+                .iso_usage_type()
         );
         assert_eq!(
-            UsageType::Reserved,
-            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0011_0001)).usage_type()
+            IsoUsageType::Reserved,
+            EndpointDescriptor::from(&endpoint_descriptor!(bmAttributes: 0b0011_0001))
+                .iso_usage_type()
         );
     }
 

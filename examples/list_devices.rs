@@ -1,7 +1,7 @@
 use std::time::Duration;
 use yusb::{
     ConfigDescriptor, DeviceDescriptor, DeviceHandle, DeviceList, EndpointDescriptor,
-    InterfaceDescriptor, Language, Result,
+    InterfaceDescriptor, Language, Result, TransferType,
 };
 
 use usb_ids::{self, FromId};
@@ -228,14 +228,16 @@ fn print_endpoint(endpoint_desc: &EndpointDescriptor) {
         "          Transfer Type          {:?}",
         endpoint_desc.transfer_type()
     );
-    println!(
-        "          Synch Type             {:?}",
-        endpoint_desc.sync_type()
-    );
-    println!(
-        "          Usage Type             {:?}",
-        endpoint_desc.usage_type()
-    );
+    if endpoint_desc.transfer_type() == TransferType::Isochronous {
+        println!(
+            "          Iso Sync Type          {:?}",
+            endpoint_desc.iso_sync_type()
+        );
+        println!(
+            "          Iso Usage Type         {:?}",
+            endpoint_desc.iso_usage_type()
+        );
+    }
     println!(
         "        wMaxPacketSize    {:#06x}",
         endpoint_desc.max_packet_size()

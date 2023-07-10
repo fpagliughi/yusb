@@ -60,8 +60,8 @@ pub use crate::{
     endpoint_descriptor::EndpointDescriptor,
     error::{Error, Result},
     fields::{
-        request_type, Direction, Port, Recipient, RequestType, Speed, SyncType, TransferType,
-        UsageType, Version,
+        request_type, Direction, IsoSyncType, IsoUsageType, Port, Recipient, RequestType, Speed,
+        TransferType, Version,
     },
     hotplug::{Hotplug, HotplugBuilder, Registration},
     interface_descriptor::{

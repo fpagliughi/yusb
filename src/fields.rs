@@ -34,20 +34,21 @@ use serde::{Deserialize, Serialize};
 /// - [USB release versions](https://en.wikipedia.org/wiki/USB#Release_versions)
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(i32)]
 #[non_exhaustive]
 pub enum Speed {
     /// The operating system doesn't know the device speed.
-    Unknown,
+    Unknown = LIBUSB_SPEED_UNKNOWN,
     /// The device is operating at low speed (1.5 Mbps).
-    Low,
+    Low = LIBUSB_SPEED_LOW,
     /// The device is operating at full speed (12 Mbps).
-    Full,
+    Full = LIBUSB_SPEED_FULL,
     /// The device is operating at high speed (480 Mbps).
-    High,
+    High = LIBUSB_SPEED_HIGH,
     /// The device is operating at super speed (5 Gbps).
-    Super,
+    Super = LIBUSB_SPEED_SUPER,
     /// The device is operating at super speed (10 Gbps).
-    SuperPlus,
+    SuperPlus = LIBUSB_SPEED_SUPER_PLUS,
 }
 
 impl Speed {
@@ -93,88 +94,143 @@ impl From<c_int> for Speed {
 /// Transfer and endpoint directions.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 pub enum Direction {
     /// Direction for read (device to host) transfers.
-    In,
+    In = LIBUSB_ENDPOINT_IN,
     /// Direction for write (host to device) transfers.
-    Out,
+    Out = LIBUSB_ENDPOINT_OUT,
+}
+
+impl From<u8> for Direction {
+    fn from(dir: u8) -> Self {
+        use Direction::*;
+        match dir {
+            LIBUSB_ENDPOINT_OUT => Out,
+            _ => In,
+        }
+    }
 }
 
 /// An endpoint's transfer type.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 pub enum TransferType {
     /// Control endpoint.
-    Control,
+    Control = LIBUSB_TRANSFER_TYPE_CONTROL,
     /// Isochronous endpoint.
-    Isochronous,
+    Isochronous = LIBUSB_TRANSFER_TYPE_ISOCHRONOUS,
     /// Bulk endpoint.
-    Bulk,
+    Bulk = LIBUSB_TRANSFER_TYPE_BULK,
     /// Interrupt endpoint.
-    Interrupt,
+    Interrupt = LIBUSB_TRANSFER_TYPE_INTERRUPT,
+    // TODO: Bulk Stream?
+    //BulkStream = LIBUSB_TRANSFER_TYPE_BULK_STREAM,
+}
+
+impl From<u8> for TransferType {
+    fn from(typ: u8) -> Self {
+        use TransferType::*;
+        match typ {
+            LIBUSB_TRANSFER_TYPE_CONTROL => Control,
+            LIBUSB_TRANSFER_TYPE_ISOCHRONOUS => Isochronous,
+            LIBUSB_TRANSFER_TYPE_BULK => Bulk,
+            _ => Interrupt,
+        }
+    }
 }
 
 /// Isochronous synchronization mode.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum SyncType {
+#[repr(u8)]
+pub enum IsoSyncType {
     /// No synchronisation.
-    NoSync,
+    NoSync = LIBUSB_ISO_SYNC_TYPE_NONE,
     /// Asynchronous.
-    Asynchronous,
+    Asynchronous = LIBUSB_ISO_SYNC_TYPE_ASYNC,
     /// Adaptive.
-    Adaptive,
+    Adaptive = LIBUSB_ISO_SYNC_TYPE_ADAPTIVE,
     /// Synchronous.
-    Synchronous,
+    Synchronous = LIBUSB_ISO_SYNC_TYPE_SYNC,
 }
 
-/// Isochronous usage type.
+impl From<u8> for IsoSyncType {
+    fn from(typ: u8) -> Self {
+        use IsoSyncType::*;
+        match typ {
+            LIBUSB_ISO_SYNC_TYPE_NONE => NoSync,
+            LIBUSB_ISO_SYNC_TYPE_ASYNC => Asynchronous,
+            LIBUSB_ISO_SYNC_TYPE_ADAPTIVE => Adaptive,
+            _ => Synchronous,
+        }
+    }
+}
+
+/// Usage type for isochronous endpoints.
+/// Values for bits 4:5 of the bmAttributes field in the endpoint descriptor.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum UsageType {
+#[repr(u8)]
+pub enum IsoUsageType {
     /// Data endpoint.
-    Data,
+    Data = LIBUSB_ISO_USAGE_TYPE_DATA,
     /// Feedback endpoint.
-    Feedback,
+    Feedback = LIBUSB_ISO_USAGE_TYPE_FEEDBACK,
     /// Explicit feedback data endpoint.
-    FeedbackData,
+    FeedbackData = LIBUSB_ISO_USAGE_TYPE_IMPLICIT,
     /// Reserved.
-    Reserved,
+    Reserved = 0x03u8,
+}
+
+impl From<u8> for IsoUsageType {
+    fn from(typ: u8) -> Self {
+        use IsoUsageType::*;
+        match typ {
+            LIBUSB_ISO_USAGE_TYPE_DATA => Data,
+            LIBUSB_ISO_USAGE_TYPE_FEEDBACK => Feedback,
+            LIBUSB_ISO_USAGE_TYPE_IMPLICIT => FeedbackData,
+            _ => Reserved,
+        }
+    }
 }
 
 /// Types of control transfers.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 pub enum RequestType {
     /// Requests that are defined by the USB standard.
-    Standard,
+    Standard = LIBUSB_REQUEST_TYPE_STANDARD,
     /// Requests that are defined by a device class, e.g., HID.
-    Class,
+    Class = LIBUSB_REQUEST_TYPE_CLASS,
     /// Vendor-specific requests.
-    Vendor,
+    Vendor = LIBUSB_REQUEST_TYPE_VENDOR,
     /// Reserved for future use.
-    Reserved,
+    Reserved = LIBUSB_REQUEST_TYPE_RESERVED,
 }
 
 /// Recipients of control transfers.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(u8)]
 pub enum Recipient {
     /// The recipient is a device.
-    Device,
+    Device = LIBUSB_RECIPIENT_DEVICE,
     /// The recipient is an interface.
-    Interface,
+    Interface = LIBUSB_RECIPIENT_INTERFACE,
     /// The recipient is an endpoint.
-    Endpoint,
+    Endpoint = LIBUSB_RECIPIENT_ENDPOINT,
     /// Other.
-    Other,
+    Other = LIBUSB_RECIPIENT_OTHER,
 }
 
 /// The unique port for a USB device.
 ///
 /// This is the combination of the bus number and all the hub ports through
 /// which a device is connected.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Port {
     // The USB bus
     bus: u8,
@@ -186,6 +242,16 @@ impl Port {
     /// Create a USB port structure from its components.
     pub fn new(bus: u8, ports: Vec<u8>) -> Self {
         Self { bus, ports }
+    }
+
+    /// Gets the bus that the port is on
+    pub fn bus(&self) -> u8 {
+        self.bus
+    }
+
+    /// Gets the ordered list of hub port numbers for the port.
+    pub fn port_numbers(&self) -> &[u8] {
+        self.ports.as_slice()
     }
 }
 
@@ -237,14 +303,6 @@ impl FromStr for Port {
         Ok(Port { bus, ports })
     }
 }
-
-impl PartialEq for Port {
-    fn eq(&self, other: &Self) -> bool {
-        self.bus == other.bus && self.ports == other.ports
-    }
-}
-
-impl Eq for Port {}
 
 /// A three-part version consisting of major, minor, and sub minor components.
 ///
@@ -318,26 +376,7 @@ pub const fn request_type(
     request_type: RequestType,
     recipient: Recipient,
 ) -> u8 {
-    let mut value: u8 = match direction {
-        Direction::Out => LIBUSB_ENDPOINT_OUT,
-        Direction::In => LIBUSB_ENDPOINT_IN,
-    };
-
-    value |= match request_type {
-        RequestType::Standard => LIBUSB_REQUEST_TYPE_STANDARD,
-        RequestType::Class => LIBUSB_REQUEST_TYPE_CLASS,
-        RequestType::Vendor => LIBUSB_REQUEST_TYPE_VENDOR,
-        RequestType::Reserved => LIBUSB_REQUEST_TYPE_RESERVED,
-    };
-
-    value |= match recipient {
-        Recipient::Device => LIBUSB_RECIPIENT_DEVICE,
-        Recipient::Interface => LIBUSB_RECIPIENT_INTERFACE,
-        Recipient::Endpoint => LIBUSB_RECIPIENT_ENDPOINT,
-        Recipient::Other => LIBUSB_RECIPIENT_OTHER,
-    };
-
-    value
+    (direction as u8) | (request_type as u8) | (recipient as u8)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -345,6 +384,15 @@ pub const fn request_type(
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn speed_compares_properly() {
+        assert!(Speed::Unknown < Speed::Low);
+        assert!(Speed::Low < Speed::Full);
+        assert!(Speed::Full < Speed::High);
+        assert!(Speed::High < Speed::Super);
+        assert!(Speed::Super < Speed::SuperPlus);
+    }
 
     // Port
 
