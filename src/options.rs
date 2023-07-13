@@ -12,6 +12,8 @@
 
 use crate::{Context, Error, Result};
 use libusb1_sys::{self as ffi, constants::*};
+
+#[cfg(unix)]
 use std::ptr;
 
 /// A `libusb` runtime option that can be enabled for a context.
