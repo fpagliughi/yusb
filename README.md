@@ -4,9 +4,9 @@ Yet another fork of a fork of a Rust [libusb](https://libusb.info/) wrapper!
 
 Pronounced _yoo-ess-bee_.
 
-This is a fork of Ilya Averyanov's [rusb](https://crates.io/crates/rusb) crate, which itself is a fork of David Cuddeback's [libusb](https://crates.io/crates/libusb) crate.
+This is an update to Ilya Averyanov's [rusb](https://crates.io/crates/rusb) crate, which itself is a fork of David Cuddeback's [libusb](https://crates.io/crates/libusb) crate.
 
-The initial version of this crate differs from `rusb` in a number of ways:
+The initial versions of this crate differ from `rusb` in a number of ways:
 
 - Removes the `UsbContext` trait
     - Consolidates `Context` and `GenericContext` types into a single, concrete `Context` type.
@@ -22,6 +22,7 @@ The initial version of this crate differs from `rusb` in a number of ways:
 ```text
     if (device.speed() < Speed::Super) { println!("Plug the device into a faster port");
 ```
+- `DeviceList` implements `IntoIterator` so can be used directly by for loops without `.iter()`
 - Some general cleanup and modernization of the code base.
 
 This crate provides a safe wrapper around the native `libusb` library. It applies the RAII pattern

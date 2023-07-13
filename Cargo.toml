@@ -1,10 +1,10 @@
 [package]
 name = "yusb"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
-    "David Cuddeback <david.cuddeback@gmail.com>", 
+    "Frank Pagliughi <fpagliughi@mindspring.com>",
     "Ilya Averyanov <a1ien.n3t@gmail.com>",
-    "Frank Pagliughi <fpagliughi@mindspring.com>"
+    "David Cuddeback <david.cuddeback@gmail.com>"
 ]
 description = "Rust library for accessing USB devices."
 license = "MIT"
