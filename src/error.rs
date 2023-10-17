@@ -12,7 +12,7 @@
 
 use libc::c_int;
 use libusb1_sys::constants::*;
-use std::{fmt, result};
+use std::{fmt, result, str::Utf8Error, string::FromUtf16Error};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -47,6 +47,8 @@ pub enum Error {
     NotSupported,
     /// The device returned a malformed descriptor.
     BadDescriptor,
+    /// Bad Unicode (UTF-8 or UTF-16)
+    BadUnicode,
     /// Other error.
     Other,
 }
@@ -68,6 +70,7 @@ impl fmt::Display for Error {
             NoMem => "Insufficient memory",
             NotSupported => "Operation not supported or unimplemented on this platform",
             BadDescriptor => "Malformed descriptor",
+            BadUnicode => "Malformed Unicode string",
             Other => "Other error",
         })
     }
@@ -92,6 +95,18 @@ impl From<c_int> for Error {
             LIBUSB_ERROR_NOT_SUPPORTED => Error::NotSupported,
             _ => Error::Other,
         }
+    }
+}
+
+impl From<Utf8Error> for Error {
+    fn from(_err: Utf8Error) -> Self {
+        Error::BadUnicode
+    }
+}
+
+impl From<FromUtf16Error> for Error {
+    fn from(_err: FromUtf16Error) -> Self {
+        Error::BadUnicode
     }
 }
 

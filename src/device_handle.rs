@@ -17,9 +17,10 @@ use crate::{
 };
 use libusb1_sys::{constants::*, *};
 use std::{
+    ffi::CStr,
     fmt::{self, Debug},
     mem,
-    os::raw::{c_int, c_uchar, c_uint},
+    os::raw::{c_char, c_int, c_uchar, c_uint},
     ptr::NonNull,
     time::Duration,
 };
@@ -639,23 +640,17 @@ impl DeviceHandle {
 
     /// Reads an ASCII string descriptor from the device.
     pub fn read_string_descriptor_ascii(&self, index: u8) -> Result<String> {
-        let mut buf = Vec::<u8>::with_capacity(255);
+        let mut buf = [0u8; 128];
 
-        let ptr = buf.as_mut_ptr() as *mut c_uchar;
-        let capacity = buf.capacity() as i32;
-
-        let res =
-            unsafe { libusb_get_string_descriptor_ascii(self.as_raw(), index, ptr, capacity) };
-
-        if res < 0 {
-            return Err(Error::from(res));
-        }
+        let ptr = buf.as_mut_ptr().cast::<c_uchar>();
+        let len = buf.len() as i32;
 
         unsafe {
-            buf.set_len(res as usize);
+            match libusb_get_string_descriptor_ascii(self.as_raw(), index, ptr, len) {
+                res if res < 0 => Err(Error::from(res)),
+                _ => Ok(CStr::from_ptr(ptr.cast::<c_char>()).to_str()?.to_string()),
+            }
         }
-
-        String::from_utf8(buf).map_err(|_| Error::Other)
     }
 
     /// Reads a string descriptor from the device.
@@ -693,15 +688,17 @@ impl DeviceHandle {
                 return Err(Error::BadDescriptor);
             }
 
-            len
+            // Length in # chars
+            len / 2
         };
 
-        if len == 2 {
-            return Ok(String::new());
+        // skip first element (it's contain descriptor type and len)
+        if len == 1 {
+            Ok(String::new())
+        } else {
+            let sbuf = String::from_utf16(&buf[1..len])?;
+            Ok(sbuf.trim_end_matches('\0').to_string())
         }
-
-        // len in bytes, skip first element(it's contain descriptor type and len)
-        String::from_utf16(&buf[1..(len / 2)]).map_err(|_| Error::Other)
     }
 
     /// Reads the device's manufacturer string descriptor (ascii).
