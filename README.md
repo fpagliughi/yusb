@@ -10,7 +10,7 @@ The initial versions of this crate differ from `rusb` in a number of ways:
 
 - Removes the `UsbContext` trait
     - Consolidates `Context` and `GenericContext` types into a single, concrete `Context` type.
-    - Now the generic context is just an instance of `Context` with a _null_ inner pointer.
+    - Now the global context is just an instance of `Context` with a _null_ inner pointer.
 - The `Device<T>` and `DeviceList<T>` no longer need to be generic over the `Context` type (since there is now only a single context type), and are now just `Device` and `DeviceList`, respectively.
 - There is a `Port` type which uniquely identified the physical USB port to which a device in the system is attached.
     - It is a combination of the bus number and ordered list of hub ports
