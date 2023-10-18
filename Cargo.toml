@@ -1,6 +1,6 @@
 [package]
 name = "yusb"
-version = "0.1.2-pre.0"
+version = "0.1.2"
 authors = [
     "Frank Pagliughi <fpagliughi@mindspring.com>",
     "Ilya Averyanov <a1ien.n3t@gmail.com>",
