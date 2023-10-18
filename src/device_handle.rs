@@ -638,8 +638,19 @@ impl DeviceHandle {
             .collect())
     }
 
+    // Reminder about string descriptors: The descriptor is a 2-byte header
+    // followed by 16-bit Unicode chars. The 1st byte of the header is the
+    // total descriptor length, and must be even, since all elements are
+    // 2-bytes long. So, max practical len = 254. Thus the string can be 252
+    // bytes, or 126 characters long.
+
+    // The Unicode string is not NUL-terminated, but some devices appear to
+    // pad the string with NUL characters, and some even include the padding
+    // in their length. This can/should be removed.
+
     /// Reads an ASCII string descriptor from the device.
     pub fn read_string_descriptor_ascii(&self, index: u8) -> Result<String> {
+        // libusb appends NUL to the ASCII string, so leave room for it
         let mut buf = [0u8; 128];
 
         let ptr = buf.as_mut_ptr().cast::<c_uchar>();
